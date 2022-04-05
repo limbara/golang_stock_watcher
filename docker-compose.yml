@@ -1,0 +1,45 @@
+version: "3.8"
+services:
+  stock_watcher_server:
+    image: cosmtrek/air
+    container_name: stock_watcher_server
+    depends_on: 
+      - stock_watcher_mongo
+    networks:
+      - stock_watcher_network
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./server:/home/stock_watcher_server
+    tty: true
+    working_dir: /home/stock_watcher_server
+  stock_watcher_mongo:
+    image: mongo
+    container_name: stock_watcher_mongo
+    networks:
+      - stock_watcher_network
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - stock_watcher-mongo-data:/data/db
+  stock_watcher_mongo_express:
+    image: mongo-express
+    container_name: stock_watcher_mongo_express
+    networks:
+      - stock_watcher_network
+    depends_on: 
+      - stock_watcher_mongo
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@stock_watcher_mongo:27017/
+    volumes:
+      - stock_watcher-mongo-data:/data/db
+networks:
+  stock_watcher_network:
+    driver: bridge
+volumes:
+  stock_watcher-mongo-data:
