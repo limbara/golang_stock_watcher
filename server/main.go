@@ -1,8 +1,14 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/limbara/stock-watcher/middlewares"
@@ -12,8 +18,11 @@ import (
 )
 
 func main() {
+	appEnv, err := utils.LoadAppEnv()
+	if err != nil {
+		log.Fatalf("Error Load App Env:\n %+v", err)
+	}
 	logger, err := utils.Logger()
-	defer logger.Sync()
 	if err != nil {
 		log.Fatalf("Error Get Logger :\n %+v", err)
 	}
@@ -22,7 +31,6 @@ func main() {
 	if err != nil {
 		logger.Sugar().Fatalw("InitMongoClient Fatal Error", "error", err)
 	}
-	defer models.DisconnectMongoClient(client)
 	logger.Sugar().Infow("Init Mongo Success")
 
 	if err := models.BootstrapDB(client); err != nil {
@@ -43,6 +51,38 @@ func main() {
 
 	routes.RegisterRoutes(router)
 
-	logger.Sugar().Infow("Server Starts At http://localhost:8080")
-	logger.Sugar().Errorw("Server Error", http.ListenAndServe(":8080", router))
+	addr := fmt.Sprintf(":%s", appEnv.AppPort)
+	server := &http.Server{
+		Addr:    addr,
+		Handler: router,
+	}
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	logger.Sugar().Infof("Server Starts At %s", addr)
+
+	go func() {
+		logger.Sugar().Fatalf("Server ListenAndServe Error:\n%+v", server.ListenAndServe())
+	}()
+
+	<-done
+	logger.Sugar().Infof("Server Stopped")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer func() {
+		// Disconned Mongo
+		models.DisconnectMongoClient(client)
+
+		// Flush all Log
+		logger.Sync()
+
+		cancel()
+	}()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Sugar().Fatalf("Server Shutdown Failed:\n%+v", err)
+	}
+
+	logger.Sugar().Infof("Server Exited Properly")
 }

@@ -4,6 +4,7 @@ import "github.com/spf13/viper"
 
 type AppEnv struct {
 	AppEnv          string `mapstructure:"APP_ENV"`
+	AppPort         string `mapstructure:"APP_PORT"`
 	MongodbUrl      string `mapstructure:"MONGODB_URL"`
 	MongodbDatabase string `mapstructure:"MONGODB_DATABASE"`
 	LogPath         string `mapstructure:"LOG_PATH"`
