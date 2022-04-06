@@ -11,7 +11,7 @@ var (
 type ResponseError struct {
 	Message  string      `json:"message"`
 	HttpCode int         `json:"http_code"`
-	Err      error       `json:"error"`
+	Err      error       `json:"-"`
 	Data     interface{} `json:"data"`
 }
 

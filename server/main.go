@@ -36,9 +36,10 @@ func main() {
 
 	router := mux.NewRouter()
 
-	router.Use(middlewares.ErrorHandlerMiddleware)
-	router.Use(middlewares.RequestLoggerMiddleware)
+	router.Use(middlewares.AddContextRequestIdMiddleware)
 	router.Use(middlewares.AddContextWantJsonMiddleware)
+	router.Use(middlewares.RequestLoggerMiddleware)
+	router.Use(middlewares.ErrorHandlerMiddleware)
 
 	routes.RegisterRoutes(router)
 

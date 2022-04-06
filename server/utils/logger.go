@@ -9,9 +9,14 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var logger *zap.Logger
+// Singleton?
+var loggerInstance *zap.Logger
 
 func Logger() (*zap.Logger, error) {
+	if loggerInstance != nil {
+		return loggerInstance, nil
+	}
+
 	file, err := getLogFile()
 	if err != nil {
 		err = fmt.Errorf("Logger getErrorFile Error : %w", err)
@@ -36,7 +41,9 @@ func Logger() (*zap.Logger, error) {
 		zapcore.NewCore(consoleEncoder, os.Stdout, lowPriority),
 	)
 
-	return zap.New(core), nil
+	loggerInstance = zap.New(core)
+
+	return loggerInstance, nil
 }
 
 func getLogFile() (*os.File, error) {
