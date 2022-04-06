@@ -61,10 +61,10 @@ func getLogFile() (*os.File, error) {
 	filePath := fmt.Sprintf("%s/%s.log", path, currentTime.Format("2006-01-02"))
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		os.MkdirAll(path, 0655) // Create your file
+		os.MkdirAll(path, 0755) // Create your file
 	}
 
-	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 644)
+	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0755)
 	if err != nil {
 		err = fmt.Errorf("Logger OpenFile Error : %w", err)
 		return nil, err
