@@ -1,0 +1,47 @@
+[
+  {
+    "create": "stocks",
+    "autoIndexId": true,
+    "validator": {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["code"],
+        "properties": {
+          "code": {
+            "bsonType": "string",
+            "maxLength": 50,
+            "pattern": "([A-Z])+$"
+          },
+          "name": {
+            "bsonType": "string",
+            "maxLength": 255
+          },
+          "open": {
+            "bsonType": "number"
+          },
+          "close": {
+            "bsonType": "number"
+          },
+          "high": {
+            "bsonType": "number"
+          },
+          "low": {
+            "bsonType": "number"
+          }
+        }
+      }
+    }
+  },
+  {
+    "createIndexes": "stocks",
+    "indexes": [
+      {
+        "key": {
+          "code": 1
+        },
+        "name": "code_1_unique",
+        "unique": true
+      }
+    ]
+  }
+]

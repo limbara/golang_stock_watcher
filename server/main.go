@@ -42,6 +42,8 @@ func main() {
 	}
 	logger.Sugar().Infow("Migrations Success")
 
+	RegisterCrons()
+
 	router := mux.NewRouter()
 
 	router.Use(middlewares.AddContextRequestIdMiddleware)
