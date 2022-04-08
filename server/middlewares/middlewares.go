@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -15,6 +17,30 @@ import (
 	"github.com/limbara/stock-watcher/utils"
 	"go.uber.org/zap"
 )
+
+func RouteNotFoundHandlerMiddleware() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		wantJson := r.Context().Value(constant.ContextKeyWantJson)
+
+		if wantJson != nil && wantJson.(bool) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(customerrors.ResponseNotFound)
+			return
+		}
+
+		var filepath = path.Join("views", "404.html")
+		var tmpl, err = template.ParseFiles(filepath)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = tmpl.Execute(w, nil)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+}
 
 func ErrorHandlerMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

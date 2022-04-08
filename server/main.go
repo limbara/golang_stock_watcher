@@ -44,19 +44,14 @@ func main() {
 
 	RegisterCrons()
 
-	router := mux.NewRouter()
-
-	router.Use(middlewares.AddContextRequestIdMiddleware)
-	router.Use(middlewares.AddContextWantJsonMiddleware)
-	router.Use(middlewares.RequestLoggerMiddleware)
-	router.Use(middlewares.ErrorHandlerMiddleware)
-
-	routes.RegisterRoutes(router)
+	router := createRouter()
 
 	addr := fmt.Sprintf(":%s", appEnv.AppPort)
 	server := &http.Server{
-		Addr:    addr,
-		Handler: router,
+		Addr:         addr,
+		Handler:      router,
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
 	}
 
 	done := make(chan os.Signal, 1)
@@ -87,4 +82,19 @@ func main() {
 	}
 
 	logger.Sugar().Infof("Server Exited Properly")
+}
+
+func createRouter() *mux.Router {
+	router := mux.NewRouter()
+	// because if all route not match then all the registered middlewares won't be executed, have to manually add WantJson middleware
+	router.NotFoundHandler = middlewares.AddContextWantJsonMiddleware(middlewares.RouteNotFoundHandlerMiddleware())
+
+	router.Use(middlewares.AddContextRequestIdMiddleware)
+	router.Use(middlewares.AddContextWantJsonMiddleware)
+	router.Use(middlewares.RequestLoggerMiddleware)
+	router.Use(middlewares.ErrorHandlerMiddleware)
+
+	routes.RegisterRoutes(router)
+
+	return router
 }
