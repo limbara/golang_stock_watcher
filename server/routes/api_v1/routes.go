@@ -6,4 +6,5 @@ import (
 
 func RegisterApiV1Routes(router *mux.Router) {
 	RegisterApiV1SectorRoutes(router.PathPrefix("/sectors").Subrouter())
+	RegisterApiV1StockRoutes(router.PathPrefix("/stocks").Subrouter())
 }
