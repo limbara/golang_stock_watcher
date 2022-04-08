@@ -13,6 +13,7 @@ import (
 	"github.com/gocolly/colly/extensions"
 	"github.com/gocolly/colly/queue"
 	"github.com/limbara/stock-watcher/models"
+	"github.com/limbara/stock-watcher/utils"
 	"github.com/robfig/cron/v3"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -37,6 +38,11 @@ type StockCodeAndNameDTO struct {
 }
 
 func scrapeStocksCodeAndName() {
+	logger, err := utils.Logger()
+	if err != nil {
+		panic(fmt.Errorf("Error Create Logger in scrapeStocksCodeAndName : %w", err))
+	}
+
 	urls := make([]string, 26)
 	for i := 0; i < 26; i++ {
 		urls[i] = fmt.Sprintf("https://www.duniainvestasi.com/bei/bulks/index/%c", rune(i+65))
@@ -47,7 +53,7 @@ func scrapeStocksCodeAndName() {
 		&queue.InMemoryQueueStorage{MaxSize: 10000}, // Use default queue storage
 	)
 	if err != nil {
-		fmt.Println(err)
+		logger.Sugar().Panic(fmt.Errorf("Error init queue in scrapeStocksCodeAndName : %w", err))
 	}
 
 	c := colly.NewCollector(
@@ -56,15 +62,15 @@ func scrapeStocksCodeAndName() {
 	extensions.RandomUserAgent(c)
 
 	c.OnError(func(r *colly.Response, err error) {
-		fmt.Printf("Error Scrapping %s\n : %+v", r.Request.URL, err)
+		logger.Sugar().Infof("Error Scrapping %s\n : %+v", r.Request.URL, err)
 	})
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL.EscapedPath())
+		logger.Sugar().Infof("Visiting %s\n", r.URL)
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		fmt.Println("Scrapping", r.Request.URL.EscapedPath(), " with Status", r.StatusCode)
+		logger.Sugar().Infof("Scrapping %s with Status %d\n", r.Request.URL, r.StatusCode)
 	})
 
 	validate := validator.New()
@@ -103,7 +109,7 @@ func scrapeStocksCodeAndName() {
 	}
 
 	if err := q.Run(c); err != nil {
-		fmt.Println("Error Run Scrapping Queue", err)
+		logger.Sugar().Info("Error Run Scrapping Queue", err)
 	}
 
 	// wait to be signalled back
@@ -128,9 +134,9 @@ func scrapeStocksCodeAndName() {
 
 	_, errSave := models.Db.GetRepo("StockRepo").Collection().BulkWrite(ctx, validatedStockDTOs)
 	if errSave != nil {
-		fmt.Println("Error Saving scrapeStocksCodeAndName", err)
+		logger.Sugar().Info("Error Saving scrapeStocksCodeAndName", errSave)
 	} else {
-		fmt.Println("Finish Scrapping scrapeStocksCodeAndName")
+		logger.Sugar().Infof("Finish Scrapping scrapeStocksCodeAndName, upsert %d stocks", len(validatedStockDTOs))
 	}
 }
 
@@ -143,7 +149,12 @@ type StockSummary struct {
 }
 
 func scrapeStockPriceSummary() {
-	currentTime := time.Now()
+	logger, err := utils.Logger()
+	if err != nil {
+		panic(fmt.Errorf("Error Create Logger in scrapeStocksCodeAndName : %w", err))
+	}
+
+	currentTime := time.Now().AddDate(0, 0, -1)
 
 	c := colly.NewCollector(
 		colly.AllowedDomains("www.duniainvestasi.com"),
@@ -151,15 +162,15 @@ func scrapeStockPriceSummary() {
 	extensions.RandomUserAgent(c)
 
 	c.OnError(func(r *colly.Response, err error) {
-		fmt.Printf("Error Scrapping %s\n : %+v", r.Request.URL, err)
+		logger.Sugar().Infof("Error Scrapping %s\n : %+v\n", r.Request.URL, err)
 	})
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL.EscapedPath())
+		logger.Sugar().Infof("Visiting %s\n", r.URL)
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		fmt.Println("Scrapping", r.Request.URL.EscapedPath(), " with Status", r.StatusCode)
+		logger.Sugar().Infof("Scrapping %s with Status %d\n", r.Request.URL, r.StatusCode)
 	})
 
 	hasToScrape := make(chan bool, 1)
@@ -188,7 +199,6 @@ func scrapeStockPriceSummary() {
 			err := validate.Struct(dto)
 
 			if err == nil {
-				fmt.Println(dto)
 				stockDTOs = append(stockDTOs, &dto)
 			}
 		}
@@ -221,9 +231,9 @@ func scrapeStockPriceSummary() {
 
 			_, errSave := models.Db.GetRepo("StockRepo").Collection().BulkWrite(ctx, validatedStockDTOs)
 			if errSave != nil {
-				fmt.Println("Error Saving scrapeStocksCodeAndName", errSave)
+				logger.Sugar().Info("Error Saving scrapeStockPriceSummary", errSave)
 			} else {
-				fmt.Println("Finish Scrapping scrapeStocksCodeAndName")
+				logger.Sugar().Infof("Finish Scrapping scrapeStockPriceSummary, upsert %d stocks", len(validatedStockDTOs))
 			}
 		}
 
@@ -247,5 +257,4 @@ func scrapeStockPriceSummary() {
 			break
 		}
 	}
-
 }
