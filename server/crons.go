@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -20,15 +19,30 @@ import (
 )
 
 func RegisterCrons() {
-	log.Default().Println("Creating Cron")
+	logger, err := utils.Logger()
+	if err != nil {
+		panic(fmt.Errorf("Error Create Logger in RegisterCrons : %w", err))
+	}
 
-	c := cron.New()
+	var c *cron.Cron
 
-	c.AddFunc(fmt.Sprintf("@every %s", 24*time.Hour), scrapeStocksCodeAndName)
+	location, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		logger.Sugar().Info(fmt.Errorf("Error Load Location in RegisterCrons %w", err))
+		logger.Sugar().Info("Creating Cron with Local time")
+		c = cron.New()
+	} else {
+		logger.Sugar().Info("Creating Cron with Asia/Jakarta time")
+		c = cron.New(cron.WithLocation(location))
+	}
 
-	c.AddFunc(fmt.Sprintf("@every %s", 12*time.Hour), scrapeStockPriceSummary)
+	// running scrapeStocksCodeAndName every midnight
+	c.AddFunc("0 0 * * *", scrapeStocksCodeAndName)
 
-	log.Default().Println("Running Cron")
+	// running scrapeStockPriceSummary every monday to saturday on 5pm
+	c.AddFunc("0 17 * * 1-6", scrapeStockPriceSummary)
+
+	logger.Sugar().Info("Running Cron")
 	c.Start()
 }
 
