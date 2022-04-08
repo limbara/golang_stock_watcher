@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.title}}</title>
+  <link rel="stylesheet" href="/static/css/normalize.css">
+  <link rel="stylesheet" href="/static/css/skeleton.css">
+  <link rel="stylesheet" href="/static/css/index.css">
+</head>
+
+<body>
+  <h1 class="index-title">List Harga Saham</h1>
+  <form action="#" id="form-search" class="row">
+    <div class="three columns">
+      <input class="u-full-width" type="text" placeholder="Kode atau Nama Saham" name="search">
+    </div>
+    <div class="two columns">
+      <input class="button-primary" type="submit" value="Cari">
+    </div>
+  </form>
+  <div class="stock-table__wrapper u-full-width">
+    <table id="stock-table" class="stock-table">
+      <thead class="stock-table__head">
+        <tr>
+          <th>Kode</th>
+          <th>Nama</th>
+          <th>Open</th>
+          <th>Close</th>
+          <th>High</th>
+          <th>Low</th>
+        </tr>
+      </thead>
+      <tbody class="stock-table__body"></tbody>
+    </table>
+  </div>
+</body>
+<script src="/static/js/anime.min.js"></script>
+<script src="/static/js/index.js"></script>
+
+</html>

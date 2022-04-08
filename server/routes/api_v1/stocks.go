@@ -6,6 +6,6 @@ import (
 )
 
 func RegisterApiV1StockRoutes(router *mux.Router) {
-	router.Path("").HandlerFunc(controllers.GetStocks)
-	router.Path("/").HandlerFunc(controllers.GetStocks)
+	router.Path("").HandlerFunc(controllers.GetStocks).Name("api.v1.stocks.getStocks")
+	router.Path("/").HandlerFunc(controllers.GetStocks).Name("api.v1.stocks.getStocks")
 }

@@ -1,0 +1,32 @@
+body {
+  padding: 1rem;
+}
+
+@media (min-width: 1000px) {
+  body {
+    width: 80vw;
+    margin: 0 auto;
+  }
+}
+
+.index-title {
+  text-align: center;
+}
+
+.stock-table {
+  min-width: 600px;
+  width: 100%;
+}
+
+.stock-table__wrapper {
+  overflow: auto;
+}
+
+.stock-table__body>tr:nth-child(odd) {
+  background-color: #EEEEEE;
+}
+
+.stock-table__body>tr td,
+.stock-table__head>tr th {
+  padding-left: .5rem;
+}

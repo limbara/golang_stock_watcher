@@ -85,6 +85,8 @@ func main() {
 }
 
 func createRouter() *mux.Router {
+	staticDir := http.Dir("./static")
+
 	router := mux.NewRouter()
 	// because if all route not match then all the registered middlewares won't be executed, have to manually add WantJson middleware
 	router.NotFoundHandler = middlewares.AddContextWantJsonMiddleware(middlewares.RouteNotFoundHandlerMiddleware())
@@ -94,6 +96,7 @@ func createRouter() *mux.Router {
 	router.Use(middlewares.RequestLoggerMiddleware)
 	router.Use(middlewares.ErrorHandlerMiddleware)
 
+	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(staticDir)))
 	routes.RegisterRoutes(router)
 
 	return router
