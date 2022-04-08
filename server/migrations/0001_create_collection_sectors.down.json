@@ -1,9 +1,0 @@
-[
-  {
-    "drop": "sectors"
-  },
-  {
-    "dropIndexes": "sectors",
-    "index": "name_1_unique"
-  }
-]

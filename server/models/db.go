@@ -35,11 +35,9 @@ func BootstrapDB(client *mongo.Client) error {
 	}
 
 	database := client.Database(env.MongodbDatabase)
-	sectorRepo := SectorRepo{database.Collection("sectors")}
 	stockRepo := StockRepo{database.Collection("stocks")}
 
 	repositories := make(map[string]Repo)
-	repositories[sectorRepo.RepoName()] = &sectorRepo
 	repositories[stockRepo.RepoName()] = &stockRepo
 
 	Db = &DB{
