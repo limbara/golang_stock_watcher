@@ -111,6 +111,14 @@ func AddContextWantJsonMiddleware(handler http.Handler) http.Handler {
 	})
 }
 
+func ForceContextWantJsonMiddleware(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), constant.ContextKeyWantJson, true)
+
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func AddContextRequestIdMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), constant.ContextKeyRequestId, uuid.New().String())
