@@ -35,7 +35,11 @@ func RouteNotFoundHandlerMiddleware() http.Handler {
 			return
 		}
 
-		err = tmpl.Execute(w, nil)
+		var data = map[string]interface{}{
+			"title": "Stock Watcher",
+		}
+
+		err = tmpl.Execute(w, data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

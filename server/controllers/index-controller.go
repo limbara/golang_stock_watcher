@@ -20,7 +20,6 @@ func GetIndex(w http.ResponseWriter, r *http.Request) {
 
 	var data = map[string]interface{}{
 		"title": "Stock Watcher",
-		"name":  "TEst",
 	}
 
 	err = tmpl.Execute(w, data)
