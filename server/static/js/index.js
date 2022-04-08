@@ -16,7 +16,7 @@ const updateTable = (stocks) => {
 
     anime({
       targets: tableBody,
-      translateY: 200,
+      translateY: 100,
       easing: 'easeInElastic(1, .6)',
       direction: 'reverse',
     });
@@ -27,7 +27,7 @@ const updateTable = (stocks) => {
   if (tableBody.childElementCount != 0) {
     anime({
       targets: tableBody,
-      translateY: 200,
+      translateY: 100,
       easing: 'easeInElastic(1, .6)',
       complete: () => {
         while (tableBody.firstChild) {
@@ -65,7 +65,6 @@ const createStockTr = (stock, createTdFunc) => {
  * @returns {Array.<Stock>}
  */
 const fetchStocks = async (search = '') => {
-  console.log(search);
   const response = await fetch(
     `/api/v1/stocks${search != '' ? `?search=${search}` : ''}`,
     {
@@ -94,18 +93,29 @@ const debounce = function (func, timeout = 300) {
   };
 };
 
+let lastSearchValue;
+
 window.addEventListener('DOMContentLoaded', async (e) => {
   const stocks = await fetchStocks();
   updateTable(stocks);
+
+  document.getElementById('search-input').value = '';
+  lastSearchValue = '';
 });
 
 const debouncedSearchSubmit = debounce(async (e) => {
   const formData = new FormData(e.target);
   const formProps = Object.fromEntries(formData);
 
+  if (lastSearchValue == formProps?.search || '') {
+    return;
+  }
+
   const stocks = await fetchStocks(formProps?.search || '');
   updateTable(stocks);
-}, 300);
+
+  lastSearchValue = formProps?.search || '';
+}, 200);
 
 document.getElementById('form-search').addEventListener('submit', (e) => {
   e.preventDefault();
