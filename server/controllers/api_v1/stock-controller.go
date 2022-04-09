@@ -9,6 +9,7 @@ import (
 
 	"github.com/limbara/stock-watcher/models"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func GetStocks(w http.ResponseWriter, r *http.Request) {
@@ -20,6 +21,7 @@ func GetStocks(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	filter := bson.M{}
+	findOptions := options.Find().SetSort(bson.M{"code": 1})
 
 	if searches, exists := urlParams["search"]; exists {
 		searchValue := searches[0]
@@ -32,7 +34,7 @@ func GetStocks(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cursor, err := stockRepo.Collection().Find(ctx, filter)
+	cursor, err := stockRepo.Collection().Find(ctx, filter, findOptions)
 	if err != nil {
 		panic(err)
 	}
