@@ -5,6 +5,8 @@ services:
       context: ./server
       dockerfile: Dockerfile
     container_name: stock_watcher_server
+    env_file:
+      - ./server/app.env
     environment:
       APP_PORT: ${APP_PORT}
     depends_on: 

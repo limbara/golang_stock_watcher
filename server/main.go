@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"reflect"
 	"syscall"
 	"time"
 
@@ -18,24 +19,32 @@ import (
 )
 
 func main() {
-	appEnv, err := utils.LoadAppEnv()
+	err := utils.BootstrapEnv()
 	if err != nil {
-		log.Fatalf("Error Load App Env:\n %+v", err)
+		log.Fatalf("Error BootstrapEnv:\n %+v", err)
 	}
-	logger, err := utils.Logger()
+	appEnv := utils.GetAppEnv()
+	logPath, ok := utils.GetEnvOrDefault("LogPath", reflect.ValueOf("./storage/error")).Interface().(string)
+	if !ok {
+		log.Fatalf("Error GetEnvOrDefault assertion to string")
+	}
+
+	err = utils.BootstrapLogger(logPath)
 	if err != nil {
 		log.Fatalf("Error Get Logger :\n %+v", err)
 	}
+	logger := utils.Logger()
 
-	client, err := models.InitMongoClient()
+	dbConfig, err := models.NewDbConfig(appEnv.DbUser, appEnv.DbPassword, appEnv.DbHost, appEnv.DbPort, appEnv.DbDatabase, appEnv.DbAuthSource)
+	if err != nil {
+		logger.Sugar().Fatalf("Error NewDbConfig:\n%+v", err)
+	}
+
+	client, err := models.InitMongoClient(dbConfig)
 	if err != nil {
 		logger.Sugar().Fatalw("InitMongoClient Fatal Error", "error", err)
 	}
-	logger.Sugar().Infow("Init Mongo Success")
-
-	if err := models.BootstrapDB(client); err != nil {
-		logger.Sugar().Fatalw("BootstrapDB Fatal Error", "error", err)
-	}
+	models.BootstrapDB(client, dbConfig)
 
 	if err := Migrate(client); err != nil {
 		logger.Sugar().Fatalw("Migrate Fatal Error", "error", err)
@@ -69,7 +78,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer func() {
 		// Disconned Mongo
-		models.DisconnectMongoClient(client)
+		client.Disconnect(ctx)
 
 		// Flush all Log
 		logger.Sync()

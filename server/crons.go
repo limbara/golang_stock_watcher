@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -21,10 +22,7 @@ import (
 )
 
 func RegisterCrons() {
-	logger, err := utils.Logger()
-	if err != nil {
-		panic(fmt.Errorf("Error Create Logger in RegisterCrons : %w", err))
-	}
+	logger := utils.Logger()
 
 	var c *cron.Cron
 
@@ -57,10 +55,7 @@ type StockCodeAndNameDTO struct {
 }
 
 func scrapeStocksCodeAndName() {
-	logger, err := utils.Logger()
-	if err != nil {
-		panic(fmt.Errorf("Error Create Logger in scrapeStocksCodeAndName : %w", err))
-	}
+	logger := utils.Logger()
 
 	urls := make([]string, 26)
 	for i := 0; i < 26; i++ {
@@ -151,7 +146,7 @@ func scrapeStocksCodeAndName() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, errSave := models.Db.GetRepo("StockRepo").Collection().BulkWrite(ctx, validatedStockDTOs)
+	_, errSave := models.GetDB().GetRepo("StockRepo").Collection().BulkWrite(ctx, validatedStockDTOs)
 	if errSave != nil {
 		logger.Sugar().Info("Error Saving scrapeStocksCodeAndName", errSave)
 	} else {
@@ -168,10 +163,7 @@ type StockSummary struct {
 }
 
 func scrapeStockPriceSummary() {
-	logger, err := utils.Logger()
-	if err != nil {
-		panic(fmt.Errorf("Error Create Logger in scrapeStocksCodeAndName : %w", err))
-	}
+	logger := utils.Logger()
 
 	currentTime := time.Now().AddDate(0, 0, -1)
 
@@ -248,7 +240,7 @@ func scrapeStockPriceSummary() {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			_, errSave := models.Db.GetRepo("StockRepo").Collection().BulkWrite(ctx, validatedStockDTOs)
+			_, errSave := models.GetDB().GetRepo("StockRepo").Collection().BulkWrite(ctx, validatedStockDTOs)
 			if errSave != nil {
 				logger.Sugar().Info("Error Saving scrapeStockPriceSummary", errSave)
 			} else {
@@ -279,23 +271,15 @@ func scrapeStockPriceSummary() {
 }
 
 func deleteOlderLogFile() {
-	logger, err := utils.Logger()
-	if err != nil {
-		panic(fmt.Errorf("Error Create Logger in scrapeStocksCodeAndName : %w", err))
+	logger := utils.Logger()
+
+	logPath, ok := utils.GetEnvOrDefault("LogPath", reflect.ValueOf("./storage/error")).Interface().(string)
+	if !ok {
+		logger.Sugar().Panic("Error GetEnvOrDefault assertion to string")
 	}
 
-	appEnv, err := utils.LoadAppEnv()
-	if err != nil {
-		logger.Sugar().Panic(fmt.Errorf("Error Load Env in crons deleteOlderLogFile : %w", err))
-	}
 	nDaysAgo := time.Now().AddDate(0, 0, -7)
-
-	path := "./storage/error"
-	if appEnv.LogPath != "" {
-		path = appEnv.LogPath
-	}
-
-	filePath := fmt.Sprintf("%s/%s.log", path, nDaysAgo.Format("2006-01-02"))
+	filePath := fmt.Sprintf("%s/%s.log", logPath, nDaysAgo.Format("2006-01-02"))
 
 	if err := os.Remove(filePath); err != nil {
 		var pathError *os.PathError

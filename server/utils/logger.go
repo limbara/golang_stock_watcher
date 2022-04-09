@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -12,17 +13,28 @@ import (
 // Singleton?
 var loggerInstance *zap.Logger
 
-func Logger() (*zap.Logger, error) {
-	if loggerInstance != nil {
-		return loggerInstance, nil
+// Get CustomLogger stored in global variable. panic if nil
+func Logger() *zap.Logger {
+	if loggerInstance == nil {
+		panic(errors.New("logger was't BootstrapDB correctly"))
 	}
 
-	file, err := getLogFile()
+	return loggerInstance
+}
+
+// Set CustomLogger stored in global variable
+func BootstrapLogger(logPath string) error {
+	file, err := getLogFile(logPath)
 	if err != nil {
-		err = fmt.Errorf("Logger getErrorFile Error : %w", err)
-		return nil, err
+		return fmt.Errorf("Error BootstrapLogger : %w", err)
 	}
 
+	loggerInstance = createZapLogger(file)
+
+	return nil
+}
+
+func createZapLogger(file *os.File) *zap.Logger {
 	stdPriority := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
 		return lvl >= zapcore.InfoLevel
 	})
@@ -41,27 +53,20 @@ func Logger() (*zap.Logger, error) {
 		zapcore.NewCore(consoleEncoder, os.Stdout, lowPriority),
 	)
 
-	loggerInstance = zap.New(core)
-
-	return loggerInstance, nil
+	return zap.New(core)
 }
 
-func getLogFile() (*os.File, error) {
-	appEnv, err := LoadAppEnv()
-	if err != nil {
-		return nil, err
-	}
-
-	path := "./storage/error"
-	if appEnv.LogPath != "" {
-		path = appEnv.LogPath
+func getLogFile(logPath string) (*os.File, error) {
+	if logPath == "" {
+		return nil, errors.New("empty logPath")
 	}
 
 	currentTime := time.Now()
-	filePath := fmt.Sprintf("%s/%s.log", path, currentTime.Format("2006-01-02"))
+	filePath := fmt.Sprintf("%s/%s.log", logPath, currentTime.Format("2006-01-02"))
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		os.MkdirAll(path, 0755) // Create your file
+	// Create Log Path Directory if not exist
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+		os.MkdirAll(logPath, 0755)
 	}
 
 	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0755)

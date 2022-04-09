@@ -57,10 +57,7 @@ func ErrorHandlerMiddleware(handler http.Handler) http.Handler {
 				} else {
 					responseError = customerrors.ResponseErrorServer.SetError(err)
 
-					logger, err := utils.Logger()
-					if err != nil {
-						responseError.SetError(err)
-					}
+					logger := utils.Logger()
 
 					uuid := r.Context().Value(constant.ContextKeyRequestId)
 
@@ -81,22 +78,18 @@ func RequestLoggerMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		handler.ServeHTTP(w, r)
-		logger, err := utils.Logger()
+		logger := utils.Logger()
 
-		if err != nil {
-			panic(fmt.Errorf("Request Logger Middleware Logger Error : %w", err))
-		} else {
-			uuid := r.Context().Value(constant.ContextKeyRequestId)
+		uuid := r.Context().Value(constant.ContextKeyRequestId)
 
-			logger.Info(
-				fmt.Sprintf("Request ID %s", uuid),
-				zap.String("Remote Addr", r.RemoteAddr),
-				zap.String("Method", r.Method),
-				zap.String("Url", r.URL.EscapedPath()),
-				zap.Any("Header", r.Header),
-				zap.Duration("Time", time.Since(start)*time.Millisecond),
-			)
-		}
+		logger.Info(
+			fmt.Sprintf("Request ID %s", uuid),
+			zap.String("Remote Addr", r.RemoteAddr),
+			zap.String("Method", r.Method),
+			zap.String("Url", r.URL.EscapedPath()),
+			zap.Any("Header", r.Header),
+			zap.Duration("Time", time.Since(start)*time.Millisecond),
+		)
 	})
 }
 

@@ -9,13 +9,10 @@ import (
 )
 
 func Migrate(client *mongo.Client) error {
-	appEnv, err := utils.LoadAppEnv()
-	if err != nil {
-		return err
-	}
+	appEnv := utils.GetAppEnv()
 
 	driver, err := mongodb.WithInstance(client, &mongodb.Config{
-		DatabaseName: appEnv.MongodbDatabase,
+		DatabaseName: appEnv.DbDatabase,
 	})
 	if err != nil {
 		return err
