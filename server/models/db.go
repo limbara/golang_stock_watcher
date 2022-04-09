@@ -87,7 +87,6 @@ func BootstrapDB(client *mongo.Client, dbConfig *DbConfig) {
 
 // Get MongoDb Client Connection
 func InitMongoClient(dbConfig *DbConfig) (*mongo.Client, error) {
-	fmt.Println(dbConfig)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
