@@ -2,6 +2,8 @@
  * @param {Array.<Stock>} stocks
  */
 const updateTable = (stocks) => {
+  const tableBody = document.querySelector('#stock-table tbody');
+
   const update = () => {
     const tableRows = stocks.map((stock) =>
       createStockTr(stock, (value) => {
@@ -14,20 +16,22 @@ const updateTable = (stocks) => {
 
     tableBody.append(...tableRows);
 
+    tableBody.style.opacity = 0;
     anime({
       targets: tableBody,
       translateY: 100,
       easing: 'easeInElastic(1, .6)',
       direction: 'reverse',
+      update: (anim) => {
+        tableBody.style.opacity = (100 - Math.round(anim.progress)) * 0.01;
+      },
     });
   };
-
-  const tableBody = document.querySelector('#stock-table tbody');
 
   if (tableBody.childElementCount != 0) {
     anime({
       targets: tableBody,
-      translateY: 100,
+      translateY: 50,
       easing: 'easeInElastic(1, .6)',
       complete: () => {
         while (tableBody.firstChild) {
