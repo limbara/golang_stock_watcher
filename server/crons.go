@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -41,6 +43,9 @@ func RegisterCrons() {
 
 	// running scrapeStockPriceSummary every monday to saturday on 5pm
 	c.AddFunc("0 17 * * 1-6", scrapeStockPriceSummary)
+
+	// delete old log file
+	c.AddFunc("0 0 * * *", deleteOlderLogFile)
 
 	logger.Sugar().Info("Running Cron")
 	c.Start()
@@ -270,5 +275,36 @@ func scrapeStockPriceSummary() {
 		} else {
 			break
 		}
+	}
+}
+
+func deleteOlderLogFile() {
+	logger, err := utils.Logger()
+	if err != nil {
+		panic(fmt.Errorf("Error Create Logger in scrapeStocksCodeAndName : %w", err))
+	}
+
+	appEnv, err := utils.LoadAppEnv()
+	if err != nil {
+		logger.Sugar().Panic(fmt.Errorf("Error Load Env in crons deleteOlderLogFile : %w", err))
+	}
+	nDaysAgo := time.Now().AddDate(0, 0, -7)
+
+	path := "./storage/error"
+	if appEnv.LogPath != "" {
+		path = appEnv.LogPath
+	}
+
+	filePath := fmt.Sprintf("%s/%s.log", path, nDaysAgo.Format("2006-01-02"))
+
+	if err := os.Remove(filePath); err != nil {
+		var pathError *os.PathError
+		if errors.As(err, &pathError) {
+			logger.Sugar().Infof("deleteOlderLogFile error : %v", pathError.Error())
+		} else {
+			logger.Sugar().Infof("deleteOlderLogFile error : %v", err)
+		}
+	} else {
+		logger.Sugar().Infof("deleteOlderLogFile %s deleted", filePath)
 	}
 }
