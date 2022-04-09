@@ -76,6 +76,11 @@ func ErrorHandlerMiddleware(handler http.Handler) http.Handler {
 
 func RequestLoggerMiddleware(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.String(), "static") {
+			handler.ServeHTTP(w, r)
+			return
+		}
+
 		start := time.Now()
 		handler.ServeHTTP(w, r)
 		logger := utils.Logger()
