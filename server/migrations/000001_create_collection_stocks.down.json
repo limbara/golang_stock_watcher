@@ -1,9 +1,9 @@
 [
   {
-    "drop": "stocks"
-  },
-  {
     "dropIndexes": "stocks",
     "index": "code_1_unique"
+  },
+  {
+    "drop": "stocks"
   }
 ]
