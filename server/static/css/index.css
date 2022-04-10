@@ -1,9 +1,15 @@
-body {
+main {
   padding: 1rem;
 }
 
+footer {
+  padding: 1rem;
+  text-align: center;
+  border-top: 1px solid #EEEEEE;
+}
+
 @media (min-width: 1000px) {
-  body {
+  main {
     width: 80vw;
     margin: 0 auto;
   }
@@ -30,3 +36,4 @@ body {
 .stock-table__head>tr th {
   padding-left: .5rem;
 }
+
