@@ -3,7 +3,7 @@ services:
   stock_watcher_server:
     build: 
       context: ./server
-      dockerfile: Dockerfile
+      dockerfile: $PWD/Dockerfile
     container_name: stock_watcher_server
     env_file:
       - ./server/app.env
