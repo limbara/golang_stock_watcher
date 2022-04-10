@@ -52,11 +52,6 @@ func main() {
 	}
 	models.BootstrapDB(client, dbConfig)
 
-	if err := Migrate(client); err != nil {
-		logger.Sugar().Fatalw("Migrate Fatal Error", "error", err)
-	}
-	logger.Sugar().Infow("Migrations Success")
-
 	RegisterCrons()
 
 	router := createRouter()
