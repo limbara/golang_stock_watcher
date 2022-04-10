@@ -29,6 +29,12 @@ func main() {
 		log.Fatalf("Error GetEnvOrDefault assertion to string")
 	}
 
+	// Set time zone location globally
+	location, err := time.LoadLocation(appEnv.AppTimezone)
+	if err == nil {
+		time.Local = location
+	}
+
 	err = utils.BootstrapLogger(logPath)
 	if err != nil {
 		log.Fatalf("Error Get Logger :\n %+v", err)
@@ -69,7 +75,7 @@ func main() {
 	logger.Sugar().Infof("Server Starts At %s", addr)
 
 	go func() {
-		logger.Sugar().Fatalf("Server ListenAndServe Error:\n%+v", server.ListenAndServe())
+		logger.Sugar().Fatal(server.ListenAndServe())
 	}()
 
 	<-done

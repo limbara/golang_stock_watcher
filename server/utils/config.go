@@ -11,6 +11,7 @@ type AppEnv struct {
 	AppName      string `mapstructure:"APP_NAME"`
 	AppHost      string `mapstructure:"APP_HOST"`
 	AppPort      string `mapstructure:"APP_PORT"`
+	AppTimezone  string `mapstructure:"APP_TZ"`
 	DbUser       string `mapstructure:"DB_USER"`
 	DbPassword   string `mapstructure:"DB_PASSWORD"`
 	DbHost       string `mapstructure:"DB_HOST"`
