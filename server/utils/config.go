@@ -4,21 +4,18 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
 )
 
 type AppEnv struct {
-	AppName      string `mapstructure:"APP_NAME"`
-	AppHost      string `mapstructure:"APP_HOST"`
-	AppPort      string `mapstructure:"APP_PORT"`
-	AppTimezone  string `mapstructure:"APP_TZ"`
-	DbUser       string `mapstructure:"DB_USER"`
-	DbPassword   string `mapstructure:"DB_PASSWORD"`
-	DbHost       string `mapstructure:"DB_HOST"`
-	DbPort       string `mapstructure:"DB_PORT"`
-	DbDatabase   string `mapstructure:"DB_DATABASE"`
-	DbAuthSource string `mapstructure:"DB_AUTH_SOURCE"`
-	LogPath      string `mapstructure:"LOG_PATH"`
+	AppName         string `mapstructure:"APP_NAME"`
+	AppHost         string `mapstructure:"APP_HOST" validate:"required"`
+	AppPort         string `mapstructure:"APP_PORT" validate:"required"`
+	AppTimezone     string `mapstructure:"APP_TZ" validate:"required"`
+	MongoDbUri      string `mapstructure:"MONGODB_URI" validate:"required"`
+	MongoDbDatabase string `mapstructure:"MONGODB_DATABASE" validate:"required"`
+	LogPath         string `mapstructure:"LOG_PATH"`
 }
 
 var appEnv AppEnv
@@ -37,6 +34,12 @@ func BootstrapEnv() error {
 
 	if err := viper.Unmarshal(&appEnv); err != nil {
 		return fmt.Errorf("BootstrapEnv Unmarshal Error: %w", err)
+	}
+
+	validate := validator.New()
+
+	if err := validate.Struct(appEnv); err != nil {
+		return fmt.Errorf("Error validate NewDbConfig : %w", err)
 	}
 
 	return nil

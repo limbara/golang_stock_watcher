@@ -41,7 +41,7 @@ func main() {
 	}
 	logger := utils.Logger()
 
-	dbConfig, err := models.NewDbConfig(appEnv.DbUser, appEnv.DbPassword, appEnv.DbHost, appEnv.DbPort, appEnv.DbDatabase, appEnv.DbAuthSource)
+	dbConfig, err := models.NewDbConfig(appEnv.MongoDbUri, appEnv.MongoDbDatabase)
 	if err != nil {
 		logger.Sugar().Fatalf("Error NewDbConfig:\n%+v", err)
 	}
@@ -56,7 +56,7 @@ func main() {
 
 	router := createRouter()
 
-	addr := fmt.Sprintf(":%s", appEnv.AppPort)
+	addr := fmt.Sprintf("%s:%s", appEnv.AppHost, appEnv.AppPort)
 	server := &http.Server{
 		Addr:         addr,
 		Handler:      router,

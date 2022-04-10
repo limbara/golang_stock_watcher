@@ -30,24 +30,16 @@ func (db *DB) GetRepo(name string) Repo {
 }
 
 type DbConfig struct {
-	dbUser       string `validate:"required"`
-	dbPassword   string `validate:"required"`
-	dbHost       string `validate:"required"`
-	dbPort       string `validate:"required"`
-	dbDatabase   string `validate:"required"`
-	dbAuthSource string `validate:"required"`
+	dbUri      string `validate:"required"`
+	dbDatabase string `validate:"required"`
 }
 
-func NewDbConfig(user string, password string, host string, port string, database string, authSource string) (*DbConfig, error) {
+func NewDbConfig(uri string, database string) (*DbConfig, error) {
 	validate := validator.New()
 
 	config := &DbConfig{
-		user,
-		password,
-		host,
-		port,
+		uri,
 		database,
-		authSource,
 	}
 
 	if err := validate.Struct(config); err != nil {
@@ -58,7 +50,11 @@ func NewDbConfig(user string, password string, host string, port string, databas
 }
 
 func (dc *DbConfig) URI() string {
-	return fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?authSource=%s", dc.dbUser, dc.dbPassword, dc.dbHost, dc.dbPort, dc.dbDatabase, dc.dbAuthSource)
+	return dc.dbUri
+}
+
+func (dc *DbConfig) Database() string {
+	return dc.dbDatabase
 }
 
 // Get DB stored in global variable. panic if nil
@@ -72,7 +68,7 @@ func GetDB() *DB {
 
 // Bootstrap DB stored in global variable
 func BootstrapDB(client *mongo.Client, dbConfig *DbConfig) {
-	database := client.Database(dbConfig.dbDatabase)
+	database := client.Database(dbConfig.Database())
 	stockRepo := StockRepo{database.Collection("stocks")}
 
 	repositories := make(map[string]Repo)
