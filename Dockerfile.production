@@ -32,9 +32,11 @@ RUN apk update && \
 
 COPY --from=builder /build/migrate /usr/local/bin
 
-ADD heroku-exec.sh /app/.profile.d/
+ADD heroku-exec.sh /app/.profile.d/heroku-exec.sh
+ADD sh-wrapper.sh /bin/sh-wrapper.sh
 RUN chmod +x /app/.profile.d/heroku-exec.sh && \
-  rm /bin/sh && ln -s /bin/bash /bin/sh && \
+  chmod +x /bin/sh-wrapper.sh && \
+  rm /bin/sh && ln -s /bin/sh-wrapper.sh /bin/sh && \
   ln -s /usr/bin/python3 /usr/bin/python
 
 USER author
