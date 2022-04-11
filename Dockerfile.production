@@ -43,4 +43,4 @@ COPY ./server/migrations ./migrations
 COPY ./server/storage ./storage
 COPY --from=builder /build/stock_watcher ./
  
-ENTRYPOINT ["/stock_watcher"]
+ENTRYPOINT ["./stock_watcher"]
