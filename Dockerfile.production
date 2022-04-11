@@ -30,7 +30,7 @@ RUN apk update && \
   addgroup -g $GROUP_ID author && \
   adduser -u $USER_ID -G author -s /bin/sh -D -h /app author
 
-COPY --from=builder /build/migrate /user/local/bin
+COPY --from=builder /build/migrate /usr/local/bin
 
 ADD heroku-exec.sh /app/.profile.d/
 RUN chmod +x /app/.profile.d/heroku-exec.sh
