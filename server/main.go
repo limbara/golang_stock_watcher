@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"reflect"
 	"syscall"
 	"time"
 
@@ -16,32 +15,26 @@ import (
 	"github.com/limbara/stock-watcher/models"
 	"github.com/limbara/stock-watcher/routes"
 	"github.com/limbara/stock-watcher/utils"
+	"github.com/spf13/viper"
 )
 
 func main() {
-	err := utils.BootstrapEnv()
-	if err != nil {
-		log.Fatalf("Error BootstrapEnv:\n %+v", err)
-	}
-	appEnv := utils.GetAppEnv()
-	logPath, ok := utils.GetEnvOrDefault("LogPath", reflect.ValueOf("./storage/error")).Interface().(string)
-	if !ok {
-		log.Fatalf("Error GetEnvOrDefault assertion to string")
-	}
+	// Initialize env
+	utils.BootstrapEnv()
 
 	// Set time zone location globally
-	location, err := time.LoadLocation(appEnv.AppTimezone)
+	location, err := time.LoadLocation(viper.GetString("APP_TZ"))
 	if err == nil {
 		time.Local = location
 	}
 
-	err = utils.BootstrapLogger(logPath)
+	err = utils.BootstrapLogger(viper.GetString("LOG_PATH"))
 	if err != nil {
 		log.Fatalf("Error Get Logger :\n %+v", err)
 	}
 	logger := utils.Logger()
 
-	dbConfig, err := models.NewDbConfig(appEnv.MongoDbUri, appEnv.MongoDbDatabase)
+	dbConfig, err := models.NewDbConfig(viper.GetString("MONGODB_URI"), viper.GetString("MONGODB_DATABASE"))
 	if err != nil {
 		logger.Sugar().Fatalf("Error NewDbConfig:\n%+v", err)
 	}
@@ -56,7 +49,7 @@ func main() {
 
 	router := createRouter()
 
-	addr := fmt.Sprintf("%s:%s", appEnv.AppHost, appEnv.AppPort)
+	addr := fmt.Sprintf("%s:%s", viper.GetString("APP_HOST"), viper.GetString("APP_PORT"))
 	server := &http.Server{
 		Addr:         addr,
 		Handler:      router,

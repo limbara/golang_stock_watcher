@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/limbara/stock-watcher/models"
 	"github.com/limbara/stock-watcher/utils"
 	"github.com/robfig/cron/v3"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -292,10 +292,7 @@ func scrapeStockPriceSummary() {
 func deleteOlderLogFile() {
 	logger := utils.Logger()
 
-	logPath, ok := utils.GetEnvOrDefault("LogPath", reflect.ValueOf("./storage/error")).Interface().(string)
-	if !ok {
-		logger.Sugar().Panic("Error GetEnvOrDefault assertion to string")
-	}
+	logPath := viper.Get("LOG_PATH")
 
 	nDaysAgo := time.Now().AddDate(0, 0, -7)
 	filePath := fmt.Sprintf("%s/%s.log", logPath, nDaysAgo.Format("2006-01-02"))
