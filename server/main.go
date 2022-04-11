@@ -49,7 +49,7 @@ func main() {
 
 	router := createRouter()
 
-	addr := fmt.Sprintf("%s:%s", viper.GetString("APP_HOST"), viper.GetString("APP_PORT"))
+	addr := fmt.Sprintf("%s:%s", viper.GetString("HOST"), viper.GetString("PORT"))
 	server := &http.Server{
 		Addr:         addr,
 		Handler:      router,
