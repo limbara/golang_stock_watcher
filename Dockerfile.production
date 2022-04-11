@@ -33,8 +33,8 @@ RUN apk update && \
 COPY --from=builder /build/migrate /usr/local/bin
 
 ADD heroku-exec.sh /app/.profile.d/
-RUN chmod +x /app/.profile.d/heroku-exec.sh
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+RUN chmod +x /app/.profile.d/heroku-exec.sh && \
+  rm /bin/sh && ln -s /bin/bash /bin/sh
 
 USER author
 
@@ -46,5 +46,5 @@ COPY --chown=author ./server/views ./views
 COPY --chown=author ./server/migrations ./migrations
 COPY --chown=author ./server/storage ./storage
 COPY --from=builder /build/stock_watcher ./
- 
+
 ENTRYPOINT ["./stock_watcher"]
