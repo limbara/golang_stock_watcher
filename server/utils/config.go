@@ -28,9 +28,9 @@ func BootstrapEnv() error {
 
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
-		return fmt.Errorf("BootstrapEnv ReadInConfig Error: %w", err)
-	}
+	// ignoring error on read file to let validate handle it instead
+	// because in production we won't have an env file
+	viper.ReadInConfig()
 
 	if err := viper.Unmarshal(&appEnv); err != nil {
 		return fmt.Errorf("BootstrapEnv Unmarshal Error: %w", err)
