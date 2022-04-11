@@ -26,7 +26,7 @@ ARG USER_ID=1000
 ARG GROUP_ID=1000
 
 RUN apk update && \
-  apk add --no-cache tzdata bash && \
+  apk add --no-cache --update python3 tzdata bash curl openssh && \
   addgroup -g $GROUP_ID author && \
   adduser -u $USER_ID -G author -s /bin/sh -D -h /app author
 
@@ -34,7 +34,8 @@ COPY --from=builder /build/migrate /usr/local/bin
 
 ADD heroku-exec.sh /app/.profile.d/
 RUN chmod +x /app/.profile.d/heroku-exec.sh && \
-  rm /bin/sh && ln -s /bin/bash /bin/sh
+  rm /bin/sh && ln -s /bin/bash /bin/sh && \
+  ln -s /usr/bin/python3 /usr/bin/python
 
 USER author
 
