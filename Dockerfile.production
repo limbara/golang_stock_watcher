@@ -36,6 +36,7 @@ USER author
 
 WORKDIR /app
 
+ADD heroku-exec.sh /etc/.profile.d
 COPY ./server/scripts ./scripts
 COPY ./server/static ./static
 COPY ./server/views ./views
