@@ -26,8 +26,8 @@ func RegisterCrons() {
 
 	c := cron.New()
 
-	// running scrapeStocksCodeAndName every midnight
-	c.AddFunc("0 0 * * *", scrapeStocksCodeAndName)
+	// running scrapeStocksCodeAndName every At 00:00 on Sunday
+	c.AddFunc("0 0 * * 0", scrapeStocksCodeAndName)
 
 	// running scrapeStockPriceSummary every monday to saturday on 5pm
 	c.AddFunc("0 17 * * 1-6", scrapeStockPriceSummary)
@@ -47,9 +47,10 @@ type StockCodeAndNameDTO struct {
 func scrapeStocksCodeAndName() {
 	logger := utils.Logger()
 
-	urls := make([]string, 26)
-	for i := 0; i < 26; i++ {
-		urls[i] = fmt.Sprintf("https://www.duniainvestasi.com/bei/bulks/index/%c", rune(i+65))
+	urls := make([]string, 60)
+	// we're just going to make our life easier by generating 60 page url
+	for i := 1; i <= 60; i++ {
+		urls[i-1] = fmt.Sprintf("https://www.idnfinancials.com/id/company/page/%d", i)
 	}
 
 	q, err := queue.New(
@@ -61,7 +62,7 @@ func scrapeStocksCodeAndName() {
 	}
 
 	c := colly.NewCollector(
-		colly.AllowedDomains("www.duniainvestasi.com"),
+		colly.AllowedDomains("www.idnfinancials.com"),
 	)
 	extensions.RandomUserAgent(c)
 
@@ -84,14 +85,18 @@ func scrapeStocksCodeAndName() {
 
 	done := make(chan struct{}, 1)
 
-	c.OnHTML("#CONTENT table tbody tr", func(e *colly.HTMLElement) {
-		filteredChildren := e.DOM.Children().Filter("td")
+	c.OnHTML("#table-companies div.table-body .table-row", func(e *colly.HTMLElement) {
+		filteredChildren := e.DOM.Children().Filter(".tc-company")
 
-		if filteredChildren.Children().Length() >= 2 && filteredChildren.Eq(0) != nil && filteredChildren.Eq(1) != nil {
+		hasCode := filteredChildren.Children().Eq(0).Text() != ""
+		hasName := filteredChildren.Children().Eq(1).Text() != ""
+
+		if filteredChildren.Children().Length() >= 2 && hasCode && hasName {
 			dto := StockCodeAndNameDTO{
-				Code: filteredChildren.Eq(0).Text(),
-				Name: filteredChildren.Eq(1).Text(),
+				Code: filteredChildren.Children().Eq(0).Text(),
+				Name: filteredChildren.Children().Eq(1).Text(),
 			}
+
 			err := validate.Struct(dto)
 
 			if err == nil {
@@ -133,14 +138,16 @@ func scrapeStocksCodeAndName() {
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	if len(validatedStockDTOs) > 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
-	_, errSave := models.GetDB().GetRepo("StockRepo").Collection().BulkWrite(ctx, validatedStockDTOs)
-	if errSave != nil {
-		logger.Sugar().Info("Error Saving scrapeStocksCodeAndName", errSave)
-	} else {
-		logger.Sugar().Infof("Finish Scrapping scrapeStocksCodeAndName, upsert %d stocks", len(validatedStockDTOs))
+		_, errSave := models.GetDB().GetRepo("StockRepo").Collection().BulkWrite(ctx, validatedStockDTOs)
+		if errSave != nil {
+			logger.Sugar().Info("Error Saving scrapeStocksCodeAndName", errSave)
+		} else {
+			logger.Sugar().Infof("Finish Scrapping scrapeStocksCodeAndName, upsert %d stocks", len(validatedStockDTOs))
+		}
 	}
 }
 
@@ -158,10 +165,8 @@ func scrapeStockPriceSummary() {
 
 	// helper function to scrape stock price summary, returns true if there's anything scraped
 	scrape := func(dateTime time.Time) bool {
-		hasScrapedStocks := false
-
 		c := colly.NewCollector(
-			colly.AllowedDomains("www.duniainvestasi.com"),
+			colly.AllowedDomains("www.infovesta.com"),
 		)
 		extensions.RandomUserAgent(c)
 
@@ -177,27 +182,30 @@ func scrapeStockPriceSummary() {
 			logger.Sugar().Infof("Scrapping %s with Status %d\n", r.Request.URL, r.StatusCode)
 		})
 
-		hasToScrape := make(chan bool, 1)
+		done := make(chan bool, 1)
 		validate := validator.New()
 		var stockDTOs []*StockSummary
 
-		c.OnHTML("#CONTENT table tbody tr", func(e *colly.HTMLElement) {
+		c.OnHTML("div table tbody tr", func(e *colly.HTMLElement) {
 			filteredChildren := e.DOM.Children().Filter("td")
 
-			hasCodeColumn := filteredChildren.Eq(0) != nil
-			hasPrevColumn := filteredChildren.Eq(1) != nil
-			hasOpenColumn := filteredChildren.Eq(2) != nil
-			hasHighColumn := filteredChildren.Eq(3) != nil
-			hasLowColumn := filteredChildren.Eq(4) != nil
-			hasCloseColumn := filteredChildren.Eq(5) != nil
+			if filteredChildren.Eq(0).Text() == "GOTO" {
+				println(filteredChildren.Eq(0).Text())
+			}
 
-			if filteredChildren.Children().Length() >= 6 && hasCodeColumn && hasPrevColumn && hasOpenColumn && hasHighColumn && hasLowColumn && hasCloseColumn {
+			hasCodeColumn := filteredChildren.Eq(0).Text() != ""
+			hasOpenColumn := filteredChildren.Eq(1).Text() != ""
+			hasHighColumn := filteredChildren.Eq(2).Text() != ""
+			hasLowColumn := filteredChildren.Eq(3).Text() != ""
+			hasCloseColumn := filteredChildren.Eq(4).Text() != ""
+
+			if hasCodeColumn && hasOpenColumn && hasHighColumn && hasLowColumn && hasCloseColumn {
 				dto := StockSummary{
 					Code:  filteredChildren.Eq(0).Text(),
 					Open:  strings.ReplaceAll(filteredChildren.Eq(1).Text(), ",", ""),
-					Close: strings.ReplaceAll(filteredChildren.Eq(5).Text(), ",", ""),
-					High:  strings.ReplaceAll(filteredChildren.Eq(3).Text(), ",", ""),
-					Low:   strings.ReplaceAll(filteredChildren.Eq(4).Text(), ",", ""),
+					Close: strings.ReplaceAll(filteredChildren.Eq(4).Text(), ",", ""),
+					High:  strings.ReplaceAll(filteredChildren.Eq(2).Text(), ",", ""),
+					Low:   strings.ReplaceAll(filteredChildren.Eq(3).Text(), ",", ""),
 				}
 
 				err := validate.Struct(dto)
@@ -209,65 +217,54 @@ func scrapeStockPriceSummary() {
 		})
 
 		c.OnScraped(func(r *colly.Response) {
-			var validatedStockDTOs []mongo.WriteModel
-
-			for _, dto := range stockDTOs {
-				err := validate.Struct(dto)
-				if err == nil {
-					openPrice, errOpenPrice := strconv.Atoi(dto.Open)
-					closePrice, errClosePrice := strconv.Atoi(dto.Close)
-					highPrice, errHighPrice := strconv.Atoi(dto.High)
-					lowPrice, errLowPrice := strconv.Atoi(dto.Low)
-
-					if errOpenPrice == nil && errClosePrice == nil && errHighPrice == nil && errLowPrice == nil {
-						filter := bson.M{"code": dto.Code}
-						update := bson.M{
-							"$set": bson.M{"open": openPrice, "close": closePrice, "high": highPrice, "low": lowPrice},
-						}
-						validatedStockDTOs = append(validatedStockDTOs, mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update))
-					}
-				}
-			}
-
-			if len(validatedStockDTOs) > 0 {
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-				defer cancel()
-
-				_, errSave := models.GetDB().GetRepo("StockRepo").Collection().BulkWrite(ctx, validatedStockDTOs)
-				if errSave != nil {
-					logger.Sugar().Info("Error Saving scrapeStockPriceSummary", errSave)
-				} else {
-					logger.Sugar().Infof("Finish Scrapping scrapeStockPriceSummary, upsert %d stocks", len(validatedStockDTOs))
-				}
-			}
-
-			// continue scrapping if current result is not empty
-			if len(stockDTOs) > 0 {
-				hasScrapedStocks = true
-
-				stockDTOs = nil // clear slice before continuing
-				hasToScrape <- true
-			} else {
-				hasToScrape <- false
-			}
+			done <- true
 		})
 
-		hasToScrape <- true
-		page := 1
-		for {
-			if <-hasToScrape {
-				url := fmt.Sprintf("https://www.duniainvestasi.com/bei/prices/daily/%s/page:%d", dateTime.Format("20060102"), page)
-				c.Visit(url)
-				page++
-			} else {
-				break
+		c.Visit(fmt.Sprintf("http://www.infovesta.com/index/stock/ALL_=%d", dateTime.Unix()))
+
+		<-done
+
+		var validatedStockDTOs []mongo.WriteModel
+
+		for _, dto := range stockDTOs {
+			err := validate.Struct(dto)
+			if err == nil {
+				openPrice, errOpenPrice := strconv.Atoi(dto.Open)
+				closePrice, errClosePrice := strconv.Atoi(dto.Close)
+				highPrice, errHighPrice := strconv.Atoi(dto.High)
+				lowPrice, errLowPrice := strconv.Atoi(dto.Low)
+
+				if errOpenPrice == nil && errClosePrice == nil && errHighPrice == nil && errLowPrice == nil {
+					filter := bson.M{"code": dto.Code}
+					update := bson.M{
+						"$set":         bson.M{"open": openPrice, "close": closePrice, "high": highPrice, "low": lowPrice},
+						"$setOnInsert": bson.M{"code": dto.Code},
+					}
+					validatedStockDTOs = append(validatedStockDTOs, mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update).SetUpsert(true))
+				}
 			}
 		}
 
-		return hasScrapedStocks
+		if len(validatedStockDTOs) > 0 {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			_, errSave := models.GetDB().GetRepo("StockRepo").Collection().BulkWrite(ctx, validatedStockDTOs)
+			if errSave != nil {
+				logger.Sugar().Info("Error Saving scrapeStockPriceSummary", errSave)
+			} else {
+				logger.Sugar().Infof("Finish Scrapping scrapeStockPriceSummary, upsert %d stocks", len(validatedStockDTOs))
+			}
+		}
+
+		if len(stockDTOs) > 0 {
+			return true
+		} else {
+			return false
+		}
 	}
 
-	// get the last 7 days calculated from today inclusive today if condition met, that is not Sunday and Saturday
+	// get the last 7 days calculated from today inclusive today skipping if day is Sunday or Saturday
 	// we're going to keep scraping if the current scraping date is not returning any result for the last 7 days scrapeDateTimes
 	scrapeDateTimes := []time.Time{}
 	i := 0
